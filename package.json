@@ -1,8 +1,16 @@
 {
   "name": "strapi-xlsx-to-json-translate",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "This plugin allows you to upload an XLSX file containing translations and outputs them as JSON data.",
-  "keywords": ["xlsx", "json", "translate", "i18n", "internationalization", "strapi", "convert"],
+  "keywords": [
+    "xlsx",
+    "json",
+    "translate",
+    "i18n",
+    "internationalization",
+    "strapi",
+    "convert"
+  ],
   "author": "Etienne PASTEUR <me@etiennepasteur.com>",
   "license": "MIT",
   "type": "commonjs",
@@ -24,23 +32,23 @@
     "@strapi/design-system": "^2.0.0-rc.16",
     "@strapi/icons": "^2.0.0-rc.16",
     "react-intl": "^7.1.6",
-    "xlsx": "^0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "peerDependencies": {
-    "@strapi/sdk-plugin": "^5.3.1",
-    "@strapi/strapi": "^5.10.0",
+    "@strapi/sdk-plugin": "^5.3.2",
+    "@strapi/strapi": "^5.11.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.29.0",
     "styled-components": "^6.1.15"
   },
   "devDependencies": {
-    "@strapi/sdk-plugin": "^5.3.1",
-    "@strapi/strapi": "^5.10.0",
-    "@strapi/typescript-utils": "^5.10.0",
-    "@types/react": "^19.0.8",
-    "@types/react-dom": "^19.0.3",
-    "prettier": "^3.5.0",
+    "@strapi/sdk-plugin": "^5.3.2",
+    "@strapi/strapi": "^5.11.2",
+    "@strapi/typescript-utils": "^5.11.2",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "prettier": "^3.5.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.29.0",
