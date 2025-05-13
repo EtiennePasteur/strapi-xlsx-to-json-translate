@@ -1,4 +1,5 @@
 import { Button, Flex, TextInput, Typography } from '@strapi/design-system';
+import { getFetchClient } from '@strapi/strapi/admin';
 import { useState } from 'react';
 
 const HomePage = () => {
@@ -20,13 +21,10 @@ const HomePage = () => {
       formData.append('file', file);
 
       try {
-        const result = await fetch('/strapi-xlsx-to-json-translate/upload', {
-          method: 'POST',
-          body: formData,
-          headers: { Authorization: `Bearer ${JSON.parse(sessionStorage.getItem('jwtToken') || '')}` },
-        });
+        const { post } = getFetchClient();
+        const result = await post<{code: number; message: string }>('/strapi-xlsx-to-json-translate/upload', formData);
 
-        if (result.ok) {
+        if (result.data.code === 200) {
           setStatus('success');
         } else {
           setStatus('fail');

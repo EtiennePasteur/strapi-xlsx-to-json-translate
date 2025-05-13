@@ -39,7 +39,7 @@ const processData = (data) => {
 };
 
 const writeFiles = (data) => {
-  const i18nDir = path.join(process.cwd(), 'public/i18n');
+  const i18nDir = path.join(process.cwd(), process.env.PUBLIC_FOLDER || 'public', 'i18n');
 
   if (!fs.existsSync(i18nDir)) {
     fs.mkdirSync(i18nDir, { recursive: true });
