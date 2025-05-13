@@ -38,8 +38,8 @@ const processData = (data) => {
   return result;
 };
 
-const writeFiles = (data) => {
-  const i18nDir = path.join(process.cwd(), process.env.PUBLIC_FOLDER || 'public', 'i18n');
+const writeFiles = (fileName, data) => {
+  const i18nDir = path.join(strapi.config.get('server.dirs.public'), 'i18n', fileName);
 
   if (!fs.existsSync(i18nDir)) {
     fs.mkdirSync(i18nDir, { recursive: true });
@@ -54,13 +54,14 @@ const writeFiles = (data) => {
 const service = ({ strapi }: { strapi: Core.Strapi }) => ({
   processXlsxFile(files) {
     try {
+      const fileName = files.file.originalFilename.split('.')[0];
       const workbook = xlsx.read(files.file.filepath, { type: 'file' });
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       const data = xlsx.utils.sheet_to_json(sheet);
       const processedData = processData(data);
 
-      writeFiles(processedData);
+      writeFiles(fileName, processedData);
       return { code: 200, message: 'XLSX file processed successfully' };
     } catch (error) {
       return { code: 500, message: 'Error processing XLSX file' };
