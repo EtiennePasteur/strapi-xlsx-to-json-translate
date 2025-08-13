@@ -64,7 +64,7 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
       writeFiles(fileName, processedData);
       return { code: 200, message: 'XLSX file processed successfully' };
     } catch (error) {
-      return { code: 500, message: 'Error processing XLSX file' };
+      return { code: 500, message: `Error processing XLSX file: ${error.message}` };
     }
   },
 });

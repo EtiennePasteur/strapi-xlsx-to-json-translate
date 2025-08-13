@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 const HomePage = () => {
   const [file, setFile] = useState<File | null>(null);
-  const [status, setStatus] = useState<'initial' | 'uploading' | 'success' | 'fail'>('initial');
+  const [status, setStatus] = useState<'initial' | 'uploading' | 'success' | string>('initial');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -27,10 +27,10 @@ const HomePage = () => {
         if (result.data.code === 200) {
           setStatus('success');
         } else {
-          setStatus('fail');
+          setStatus(result.data.message || 'File upload failed!');
         }
       } catch (error) {
-        setStatus('fail');
+        setStatus(error instanceof Error ? error.message : 'File upload failed!');
       }
     }
   };
@@ -83,12 +83,6 @@ const Result = ({ status }: { status: string }) => {
         ✅ File uploaded successfully!
       </Typography>
     );
-  } else if (status === 'fail') {
-    return (
-      <Typography variant="omega" as="p">
-        ❌ File upload failed!
-      </Typography>
-    );
   } else if (status === 'uploading') {
     return (
       <Typography variant="omega" as="p">
@@ -96,7 +90,11 @@ const Result = ({ status }: { status: string }) => {
       </Typography>
     );
   } else {
-    return null;
+    return (
+      <Typography variant="omega" as="p">
+        ❌ {status || 'File upload failed!'}
+      </Typography>
+    );
   }
 };
 
