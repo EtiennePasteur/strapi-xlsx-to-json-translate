@@ -89,12 +89,14 @@ const Result = ({ status }: { status: string }) => {
         ⏳ Uploading selected file...
       </Typography>
     );
-  } else {
+  } else if (status !== 'initial') {
     return (
       <Typography variant="omega" as="p">
         ❌ {status || 'File upload failed!'}
       </Typography>
     );
+  } else {
+    return null;
   }
 };
 
