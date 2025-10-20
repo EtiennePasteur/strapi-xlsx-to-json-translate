@@ -1,1 +1,23 @@
-{}
+{
+  "plugin.name": "XLSX to JSON Translator",
+  "plugin.description": "Convert Excel translation files to JSON format",
+  "page.home.title": "XLSX to JSON Translator",
+  "page.home.description": "Upload an Excel file with translations to convert them into JSON files. Files will be saved to /public/i18n/[filename]/",
+  "field.label": "Select Excel File",
+  "field.hint": "Maximum file size: 10MB. Supported formats: .xlsx, .xls",
+  "button.upload": "Upload and Process",
+  "button.clear": "Clear",
+  "button.uploadAnother": "Upload Another File",
+  "alert.fileSelected": "File selected",
+  "alert.fileInfo.name": "Name",
+  "alert.fileInfo.size": "Size",
+  "status.processing": "Processing file...",
+  "status.success": "Success",
+  "status.error": "Error",
+  "error.invalidFileType": "Please upload a valid Excel file (.xlsx or .xls)",
+  "error.fileSizeExceeded": "File size exceeds the maximum limit of 10MB",
+  "error.emptyFile": "File is empty",
+  "error.uploadFailed": "File upload failed",
+  "instructions.title": "Expected Excel Format:",
+  "instructions.description": "The plugin will create separate JSON files for each language column (en.json, fr.json, etc.) in the /public/i18n/[filename]/ directory."
+}

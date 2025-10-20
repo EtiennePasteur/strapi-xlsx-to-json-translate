@@ -1,103 +1,243 @@
-import { Button, Flex, TextInput, Typography } from '@strapi/design-system';
+import {
+  Button,
+  Flex,
+  Typography,
+  Field,
+  Box,
+  Alert,
+  Loader,
+} from '@strapi/design-system';
 import { getFetchClient } from '@strapi/strapi/admin';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { Check, Cross, Upload } from '@strapi/icons';
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+interface UploadStatus {
+  type: 'initial' | 'uploading' | 'success' | 'error';
+  message?: string;
+}
 
 const HomePage = () => {
   const [file, setFile] = useState<File | null>(null);
-  const [status, setStatus] = useState<'initial' | 'uploading' | 'success' | string>('initial');
+  const [status, setStatus] = useState<UploadStatus>({ type: 'initial' });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setStatus('initial');
-      setFile(e.target.files[0]);
+  const validateFile = (file: File): string | null => {
+    // Validate file type
+    const validExtensions = ['.xlsx', '.xls'];
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    if (!validExtensions.includes(fileExtension)) {
+      return 'Please upload a valid Excel file (.xlsx or .xls)';
     }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return `File size exceeds the maximum limit of ${MAX_FILE_SIZE / (1024 * 1024)}MB`;
+    }
+
+    // Validate file name
+    if (file.size === 0) {
+      return 'File is empty';
+    }
+
+    return null;
   };
 
-  const handleUpload = async () => {
-    if (file) {
-      setStatus('uploading');
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0];
+      const validationError = validateFile(selectedFile);
 
-      const formData = new FormData();
-      formData.append('file', file);
-
-      try {
-        const { post } = getFetchClient();
-        const result = await post<{code: number; message: string }>('/strapi-xlsx-to-json-translate/upload', formData);
-
-        if (result.data.code === 200) {
-          setStatus('success');
-        } else {
-          setStatus(result.data.message || 'File upload failed!');
+      if (validationError) {
+        setStatus({ type: 'error', message: validationError });
+        setFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
         }
-      } catch (error) {
-        setStatus(error instanceof Error ? error.message : 'File upload failed!');
+      } else {
+        setFile(selectedFile);
+        setStatus({ type: 'initial' });
       }
     }
   };
 
+  const handleUpload = async () => {
+    if (!file) return;
+
+    setStatus({ type: 'uploading' });
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const { post } = getFetchClient();
+      const result = await post<{ code: number; message: string }>(
+        '/strapi-xlsx-to-json-translate/upload',
+        formData
+      );
+
+      if (result.data.code === 200) {
+        setStatus({
+          type: 'success',
+          message: result.data.message || 'File uploaded and processed successfully!',
+        });
+      } else {
+        setStatus({
+          type: 'error',
+          message: result.data.message || 'File upload failed!',
+        });
+      }
+    } catch (error) {
+      setStatus({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'File upload failed!',
+      });
+    }
+  };
+
+  const handleReset = () => {
+    setFile(null);
+    setStatus({ type: 'initial' });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
-    <Flex
-      gap={{
-        initial: 4,
-      }}
-      direction={{
-        initial: 'column',
-      }}
-      alignItems={{
-        initial: 'flex-start',
-      }}
-      padding={[8, 10]}
-    >
-      <Typography variant="alpha" as="h1">
-        Strapi XLSX to JSON Translate
-      </Typography>
-      <TextInput
-        label="Upload xlsx file"
-        type="file"
-        accept=".xls,.xlsx"
-        onChange={handleFileChange}
-      />
+    <Box padding={8}>
+      <Flex direction="column" alignItems="flex-start" gap={6}>
+        {/* Header */}
+        <Flex direction="column" alignItems="flex-start" gap={2}>
+          <Typography variant="alpha" as="h1">
+            XLSX to JSON Translator
+          </Typography>
+          <Typography variant="omega" textColor="neutral600">
+            Upload an Excel file with translations to convert them into JSON files. Files will be
+            saved to <code>/public/i18n/[filename]/</code>
+          </Typography>
+        </Flex>
 
-      <Flex
-        gap={{
-          initial: 4,
-        }}
-        direction={{
-          initial: 'row',
-        }}
-        alignItems={{
-          initial: 'center',
-        }}
-      >
-        {file && <Button onClick={handleUpload}>Submit</Button>}
-        <Result status={status} />
+        {/* File Upload Section */}
+        <Box
+          style={{ width: '100%', maxWidth: '600px' }}
+        >
+          <Field.Root>
+            <Field.Label>Select Excel File</Field.Label>
+            <Flex direction="column" alignItems="flex-start" gap={2}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xls,.xlsx"
+                onChange={handleFileChange}
+                disabled={status.type === 'uploading'}
+                style={{
+                  padding: '8px',
+                  border: '1px solid #dcdce4',
+                  borderRadius: '4px',
+                  width: '100%',
+                  cursor: status.type === 'uploading' ? 'not-allowed' : 'pointer',
+                }}
+              />
+              <Typography variant="pi" textColor="neutral600">
+                Maximum file size: 10MB. Supported formats: .xlsx, .xls
+              </Typography>
+            </Flex>
+          </Field.Root>
+        </Box>
+
+        {/* File Info */}
+        {file && status.type !== 'uploading' && (
+          <Alert variant="default" title="File selected">
+            <Typography>
+              <strong>Name:</strong> {file.name}
+              <br />
+              <strong>Size:</strong> {(file.size / 1024).toFixed(2)} KB
+            </Typography>
+          </Alert>
+        )}
+
+        {/* Status Messages */}
+        {status.type === 'uploading' && (
+          <Flex gap={2} alignItems="center">
+            <Loader small />
+            <Typography>Processing file...</Typography>
+          </Flex>
+        )}
+
+        {status.type === 'success' && (
+          <Alert
+            variant="success"
+            title="Success"
+            onClose={handleReset}
+          >
+            {status.message}
+          </Alert>
+        )}
+
+        {status.type === 'error' && status.message && (
+          <Alert variant="danger" title="Error" onClose={() => setStatus({ type: 'initial' })}>
+            {status.message}
+          </Alert>
+        )}
+
+        {/* Action Buttons */}
+        <Flex gap={2}>
+          {file && status.type !== 'uploading' && status.type !== 'success' && (
+            <>
+              <Button
+                onClick={handleUpload}
+                disabled={!file || status.type === 'uploading'}
+                startIcon={<Upload />}
+              >
+                Upload and Process
+              </Button>
+              <Button onClick={handleReset} variant="tertiary">
+                Clear
+              </Button>
+            </>
+          )}
+
+          {status.type === 'success' && (
+            <Button onClick={handleReset} startIcon={<Upload />}>
+              Upload Another File
+            </Button>
+          )}
+        </Flex>
+
+        {/* Instructions */}
+        <Box
+          padding={4}
+          background="neutral100"
+          borderRadius="4px"
+          style={{ width: '100%', maxWidth: '600px' }}
+        >
+          <Typography variant="omega" fontWeight="bold" marginBottom={2}>
+            Expected Excel Format:
+          </Typography>
+          <Box
+            as="pre"
+            style={{
+              fontSize: '12px',
+              overflow: 'auto',
+              background: 'white',
+              padding: '8px',
+              borderRadius: '4px',
+            }}
+          >
+            {`| Informations | Key              | en       | fr       |
+|--------------|------------------|----------|----------|
+| Description  | app.title        | My App   | Mon App  |
+| Description  | app.welcome.text | Welcome  | Bienvenue|`}
+          </Box>
+          <Typography variant="pi" textColor="neutral600" marginTop={2}>
+            The plugin will create separate JSON files for each language column (en.json, fr.json,
+            etc.) in the <code>/public/i18n/[filename]/</code> directory.
+          </Typography>
+        </Box>
       </Flex>
-    </Flex>
+    </Box>
   );
-};
-
-const Result = ({ status }: { status: string }) => {
-  if (status === 'success') {
-    return (
-      <Typography variant="omega" as="p">
-        ✅ File uploaded successfully!
-      </Typography>
-    );
-  } else if (status === 'uploading') {
-    return (
-      <Typography variant="omega" as="p">
-        ⏳ Uploading selected file...
-      </Typography>
-    );
-  } else if (status !== 'initial') {
-    return (
-      <Typography variant="omega" as="p">
-        ❌ {status || 'File upload failed!'}
-      </Typography>
-    );
-  } else {
-    return null;
-  }
 };
 
 export { HomePage };
