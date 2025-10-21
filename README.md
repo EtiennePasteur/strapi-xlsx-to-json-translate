@@ -1,6 +1,7 @@
 # strapi-xlsx-to-json-translate
-
 This plugin allows you to upload an XLSX file containing translations and outputs them as JSON data.
+
+<img width="977" height="773" alt="Capture d’écran 2025-10-21 160119" src="https://github.com/user-attachments/assets/6155a76f-a2e7-41ff-9614-c95037cd31b6" />
 
 ### Format of xlsx file
 
