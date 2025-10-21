@@ -187,7 +187,7 @@ const HomePage = () => {
             <>
               <Button
                 onClick={handleUpload}
-                disabled={!file || status.type === 'uploading'}
+                disabled={!file}
                 startIcon={<Upload />}
               >
                 Upload and Process

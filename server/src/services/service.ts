@@ -3,24 +3,24 @@ import xlsx from 'xlsx';
 import fs from 'fs';
 import path from 'path';
 
-interface FileUpload {
+export interface FileUpload {
   originalFilename: string;
   filepath: string;
   mimetype: string;
   size: number;
 }
 
-interface FilesContext {
+export interface FilesContext {
   file?: FileUpload;
 }
 
-interface TranslationRow {
+export interface TranslationRow {
   Informations?: string;
   Key: string;
   [language: string]: string | undefined;
 }
 
-interface ProcessResult {
+export interface ProcessResult {
   code: number;
   message: string;
 }
