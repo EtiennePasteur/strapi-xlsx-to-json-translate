@@ -75,8 +75,7 @@ const writeFiles = (folderName: string, data: { [key: string]: any }): void => {
 
   Object.keys(data).forEach((lang) => {
     const filePath = path.join(i18nDir, `${lang}.json`);
-    // Pretty-print JSON with 2-space indentation for better readability
-    fs.writeFileSync(filePath, JSON.stringify(data[lang], null, 2), 'utf8');
+    fs.writeFileSync(filePath, JSON.stringify(data[lang]), 'utf8');
   });
 };
 

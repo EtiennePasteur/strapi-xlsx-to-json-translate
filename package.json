@@ -1,6 +1,6 @@
 {
   "name": "strapi-xlsx-to-json-translate",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "This plugin allows you to upload an XLSX file containing translations and outputs them as JSON data.",
   "keywords": [
     "xlsx",
