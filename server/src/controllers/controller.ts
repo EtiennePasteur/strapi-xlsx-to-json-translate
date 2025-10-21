@@ -9,10 +9,13 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
         return;
       }
 
+      // Get custom folder name from request body if provided
+      const { folderName } = ctx.request.body || {};
+
       const process = await strapi
         .plugin('strapi-xlsx-to-json-translate')
         .service('service')
-        .processXlsxFile(ctx.request.files);
+        .processXlsxFile(ctx.request.files, folderName);
 
       // Handle different response codes appropriately
       if (process.code === 500) {
@@ -31,6 +34,23 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
       console.error('Controller error:', error);
       return ctx.internalServerError(
         `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  },
+
+  async listFolders(ctx) {
+    try {
+      const folders = await strapi
+        .plugin('strapi-xlsx-to-json-translate')
+        .service('service')
+        .listI18nFolders();
+
+      ctx.status = 200;
+      ctx.body = { folders };
+    } catch (error) {
+      console.error('Error listing folders:', error);
+      return ctx.internalServerError(
+        `Error listing folders: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   },

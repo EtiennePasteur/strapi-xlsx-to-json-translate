@@ -66,8 +66,8 @@ const processData = (data: TranslationRow[]): { [key: string]: any } => {
   return result;
 };
 
-const writeFiles = (fileName: string, data: { [key: string]: any }): void => {
-  const i18nDir = path.join(strapi.config.get('server.dirs.public'), 'i18n', fileName);
+const writeFiles = (folderName: string, data: { [key: string]: any }): void => {
+  const i18nDir = path.join(strapi.config.get('server.dirs.public'), 'i18n', folderName);
 
   if (!fs.existsSync(i18nDir)) {
     fs.mkdirSync(i18nDir, { recursive: true });
@@ -87,7 +87,7 @@ const getFileNameWithoutExtension = (filename: string): string => {
 };
 
 const service = ({ strapi }: { strapi: Core.Strapi }) => ({
-  processXlsxFile(files: FilesContext): ProcessResult {
+  processXlsxFile(files: FilesContext, customFolderName?: string): ProcessResult {
     try {
       // Validate that file exists
       if (!files || !files.file) {
@@ -116,8 +116,14 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
         return { code: 400, message: 'Invalid file type. Only .xlsx and .xls files are allowed' };
       }
 
-      // Extract filename without extension
-      const fileName = getFileNameWithoutExtension(uploadedFile.originalFilename);
+      // Use custom folder name if provided, otherwise extract from filename
+      const folderName = customFolderName?.trim() || getFileNameWithoutExtension(uploadedFile.originalFilename);
+
+      // Validate folder name (no special characters that could cause path issues)
+      const validFolderNameRegex = /^[a-zA-Z0-9_-]+$/;
+      if (!validFolderNameRegex.test(folderName)) {
+        return { code: 400, message: 'Invalid folder name. Only alphanumeric characters, hyphens, and underscores are allowed' };
+      }
 
       // Read the workbook from file
       const workbook = xlsx.readFile(uploadedFile.filepath);
@@ -149,11 +155,11 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
         return { code: 400, message: 'No valid translations found in Excel file' };
       }
 
-      writeFiles(fileName, processedData);
+      writeFiles(folderName, processedData);
 
       return {
         code: 200,
-        message: `Successfully processed ${Object.keys(processedData).length} language(s): ${Object.keys(processedData).join(', ')}`
+        message: `Successfully processed ${Object.keys(processedData).length} language(s) into folder '${folderName}': ${Object.keys(processedData).join(', ')}`
       };
     } catch (error) {
       console.error('Error processing XLSX file:', error);
@@ -161,6 +167,30 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
         code: 500,
         message: `Error processing XLSX file: ${error instanceof Error ? error.message : 'Unknown error'}`
       };
+    }
+  },
+
+  listI18nFolders(): string[] {
+    try {
+      const i18nBaseDir = path.join(strapi.config.get('server.dirs.public'), 'i18n');
+
+      // Create directory if it doesn't exist
+      if (!fs.existsSync(i18nBaseDir)) {
+        fs.mkdirSync(i18nBaseDir, { recursive: true });
+        return [];
+      }
+
+      // Read all entries in the i18n directory
+      const entries = fs.readdirSync(i18nBaseDir, { withFileTypes: true });
+
+      // Filter for directories only and return their names
+      return entries
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => entry.name)
+        .sort();
+    } catch (error) {
+      console.error('Error listing i18n folders:', error);
+      return [];
     }
   },
 });

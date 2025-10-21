@@ -6,9 +6,12 @@ import {
   Box,
   Alert,
   Loader,
+  SingleSelect,
+  SingleSelectOption,
+  TextInput,
 } from '@strapi/design-system';
 import { getFetchClient } from '@strapi/strapi/admin';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Check, Cross, Upload } from '@strapi/icons';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -21,7 +24,43 @@ interface UploadStatus {
 const HomePage = () => {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<UploadStatus>({ type: 'initial' });
+  const [existingFolders, setExistingFolders] = useState<string[]>([]);
+  const [selectedFolder, setSelectedFolder] = useState<string>('');
+  const [customFolderName, setCustomFolderName] = useState<string>('');
+  const [isCustomFolder, setIsCustomFolder] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch existing folders on component mount
+  useEffect(() => {
+    const fetchFolders = async () => {
+      try {
+        const { get } = getFetchClient();
+        const result = await get<{ folders: string[] }>('/strapi-xlsx-to-json-translate/folders');
+        setExistingFolders(result.data.folders || []);
+      } catch (error) {
+        console.error('Error fetching folders:', error);
+      }
+    };
+    fetchFolders();
+  }, []);
+
+  // Auto-update folder name based on file name
+  useEffect(() => {
+    if (file) {
+      const fileNameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.'));
+      // Check if this filename matches an existing folder
+      if (existingFolders.includes(fileNameWithoutExt)) {
+        setSelectedFolder(fileNameWithoutExt);
+        setCustomFolderName(fileNameWithoutExt);
+        setIsCustomFolder(false);
+      } else {
+        // New folder will be created
+        setSelectedFolder('__create_new__');
+        setCustomFolderName(fileNameWithoutExt);
+        setIsCustomFolder(true);
+      }
+    }
+  }, [file, existingFolders]);
 
   const validateFile = (file: File): string | null => {
     // Validate file type
@@ -65,10 +104,27 @@ const HomePage = () => {
   const handleUpload = async () => {
     if (!file) return;
 
+    // Validate folder name
+    const folderName = customFolderName.trim();
+    if (!folderName) {
+      setStatus({ type: 'error', message: 'Please provide a folder name' });
+      return;
+    }
+
+    const validFolderNameRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!validFolderNameRegex.test(folderName)) {
+      setStatus({
+        type: 'error',
+        message: 'Invalid folder name. Only alphanumeric characters, hyphens, and underscores are allowed',
+      });
+      return;
+    }
+
     setStatus({ type: 'uploading' });
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('folderName', folderName);
 
     try {
       const { post } = getFetchClient();
@@ -82,6 +138,10 @@ const HomePage = () => {
           type: 'success',
           message: result.data.message || 'File uploaded and processed successfully!',
         });
+        // Refresh folder list
+        const { get } = getFetchClient();
+        const foldersResult = await get<{ folders: string[] }>('/strapi-xlsx-to-json-translate/folders');
+        setExistingFolders(foldersResult.data.folders || []);
       } else {
         setStatus({
           type: 'error',
@@ -99,8 +159,22 @@ const HomePage = () => {
   const handleReset = () => {
     setFile(null);
     setStatus({ type: 'initial' });
+    setSelectedFolder('');
+    setCustomFolderName('');
+    setIsCustomFolder(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  const handleFolderSelect = (value: string) => {
+    setSelectedFolder(value);
+    if (value === '__create_new__') {
+      setIsCustomFolder(true);
+      setCustomFolderName('');
+    } else {
+      setCustomFolderName(value);
+      setIsCustomFolder(false);
     }
   };
 
@@ -113,8 +187,8 @@ const HomePage = () => {
             XLSX to JSON Translator
           </Typography>
           <Typography variant="omega" textColor="neutral600">
-            Upload an Excel file with translations to convert them into JSON files. Files will be
-            saved to <code>/public/i18n/[filename]/</code>
+            Upload an Excel file with translations to convert them into JSON files. Choose a destination
+            folder from existing ones or create a new one.
           </Typography>
         </Flex>
 
@@ -146,10 +220,76 @@ const HomePage = () => {
           </Field.Root>
         </Box>
 
+        {/* Destination Folder Section */}
+        {file && (
+          <Box style={{ width: '100%', maxWidth: '600px' }}>
+            <Flex direction="column" gap={2}>
+              <Flex gap={4} style={{ width: '100%' }}>
+                <Box style={{ flex: 1 }}>
+                  <Field.Root>
+                    <Field.Label>Destination Folder</Field.Label>
+                    <SingleSelect
+                      value={selectedFolder}
+                      onChange={handleFolderSelect}
+                      placeholder="Select a folder"
+                      disabled={status.type === 'uploading'}
+                      onClear={() => {
+                        setSelectedFolder('');
+                        setCustomFolderName('');
+                        setIsCustomFolder(false);
+                      }}
+                    >
+                      <SingleSelectOption value="__create_new__">
+                        + Create new folder
+                      </SingleSelectOption>
+                      {existingFolders.length > 0 && existingFolders.map((folder) => (
+                        <SingleSelectOption key={folder} value={folder}>
+                          {folder}
+                        </SingleSelectOption>
+                      ))}
+                    </SingleSelect>
+                  </Field.Root>
+                </Box>
+
+                {isCustomFolder && (
+                  <Box style={{ flex: 1 }}>
+                    <Field.Root>
+                      <Field.Label>New Folder Name</Field.Label>
+                      <TextInput
+                        value={customFolderName}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                          setCustomFolderName(e.target.value);
+                        }}
+                        placeholder="Enter folder name (e.g., my-translations)"
+                        disabled={status.type === 'uploading'}
+                      />
+                    </Field.Root>
+                  </Box>
+                )}
+              </Flex>
+
+              <Typography variant="pi" textColor="neutral600">
+                {isCustomFolder ? (
+                  <>
+                    Only alphanumeric characters, hyphens, and underscores allowed. Files will be saved to{' '}
+                    <code>/public/i18n/{customFolderName || '[folder-name]'}/</code>
+                  </>
+                ) : (
+                  customFolderName && (
+                    <>
+                      Files will be saved to <code>/public/i18n/{customFolderName}/</code>
+                    </>
+                  )
+                )}
+              </Typography>
+            </Flex>
+          </Box>
+        )}
+
         {/* File Info */}
         {file && status.type !== 'uploading' && (
-          <Alert variant="default" title="File selected">
-            <Typography>
+          <Alert variant="default" title="File selected:" style={{ width: '100%', maxWidth: '600px' }} onClose={handleReset}>
+            <Typography paddingLeft={6} style={{ display: 'block' }}>
               <strong>Name:</strong> {file.name}
               <br />
               <strong>Size:</strong> {(file.size / 1024).toFixed(2)} KB
@@ -170,13 +310,19 @@ const HomePage = () => {
             variant="success"
             title="Success"
             onClose={handleReset}
+            style={{ width: '100%', maxWidth: '600px' }}
           >
             {status.message}
           </Alert>
         )}
 
         {status.type === 'error' && status.message && (
-          <Alert variant="danger" title="Error" onClose={() => setStatus({ type: 'initial' })}>
+          <Alert
+            variant="danger"
+            title="Error"
+            onClose={() => setStatus({ type: 'initial' })}
+            style={{ width: '100%', maxWidth: '600px' }}
+          >
             {status.message}
           </Alert>
         )}
@@ -207,7 +353,6 @@ const HomePage = () => {
 
         {/* Instructions */}
         <Box
-          padding={4}
           background="neutral100"
           borderRadius="4px"
           style={{ width: '100%', maxWidth: '600px' }}
