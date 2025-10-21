@@ -7,4 +7,12 @@ export default [
       policies: [],
     },
   },
+  {
+    method: "GET",
+    path: "/folders",
+    handler: "controller.listFolders",
+    config: {
+      policies: [],
+    },
+  },
 ];
