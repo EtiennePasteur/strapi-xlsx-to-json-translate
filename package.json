@@ -1,6 +1,6 @@
 {
   "name": "strapi-xlsx-to-json-translate",
-  "version": "2.0.1",
+  "version": "3.0.1",
   "description": "This plugin allows you to upload an XLSX file containing translations and outputs them as JSON data.",
   "keywords": [
     "xlsx",
@@ -29,26 +29,26 @@
     "description": "This plugin allows you to upload an XLSX file containing translations and outputs them as JSON data."
   },
   "dependencies": {
-    "@strapi/design-system": "^2.0.0-rc.30",
-    "@strapi/icons": "^2.0.0-rc.30",
-    "react-intl": "^7.1.14",
+    "@strapi/design-system": "^2.2.4",
+    "@strapi/icons": "^2.2.4",
     "xlsx": "file:vendor/xlsx-0.20.3.tgz"
   },
   "peerDependencies": {
-    "@strapi/sdk-plugin": "^5",
+    "@strapi/sdk-plugin": "^6",
     "@strapi/strapi": "^5",
     "react": "^18",
     "react-dom": "^18",
     "react-router-dom": "^6",
-    "styled-components": "^6"
+    "styled-components": "^6",
+    "react-intl": "^6"
   },
   "devDependencies": {
-    "@strapi/sdk-plugin": "^5",
+    "@strapi/sdk-plugin": "^6",
     "@strapi/strapi": "^5",
     "@strapi/typescript-utils": "^5",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "prettier": "^3.6.2",
+    "prettier": "^3.9.10",
     "react": "^18",
     "react-dom": "^18",
     "react-router-dom": "^6",
